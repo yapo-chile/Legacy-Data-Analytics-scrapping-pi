@@ -1,2 +1,7 @@
+# Scrapy temp folder
 .scrapy
-__pycache__/
+
+# Byte-compiled / optimized / DLL files
+_pycache__/**
+*.py[cod]
+*$py.class
