@@ -10,20 +10,20 @@ class PISpider(scrapy.Spider):
     regiones = [
         'arica-y-parinacota',
         'tarapaca',
-        # 'antofagasta',
-        # 'atacama',
-        # 'coquimbo',
-        # 'valparaiso',
-        # 'bernardo-ohiggins',
-        # 'maule',
-        # 'nuble',
-        # 'biobio',
-        # 'la-araucania',
-        # 'de-los-rios',
-        # 'los-lagos',
-        # 'aysen',
-        # 'magallanes-y-antartica-chilena',
-        # 'metropolitana',
+        'antofagasta',
+        'atacama',
+        'coquimbo',
+        'valparaiso',
+        'bernardo-ohiggins',
+        'maule',
+        'nuble',
+        'biobio',
+        'la-araucania',
+        'de-los-rios',
+        'los-lagos',
+        'aysen',
+        'magallanes-y-antartica-chilena',
+        'metropolitana',
     ]
     tipos = [
         'casa',
@@ -35,38 +35,45 @@ class PISpider(scrapy.Spider):
     ]
 
     def start_requests(self):
+        # yield scrapy.Request('https://www.portalinmobiliario.com', self.parseHome)
         for regimen in self.regimenes:
             for modalidad in self.modalidades:
-                for tipo in self.tipos:
                     for region in self.regiones:
                         yield scrapy.Request(
-                            url=self.url_base + '/' + regimen + '/' + tipo + '/' + modalidad + '/' + region, 
+                            url=self.url_base + '/' + regimen + '/' + modalidad + '/' + region, 
                             callback=self.parseListing, 
+                            cookies={'pin_exp':'new'},
                             headers={'Referer':'https://www.portalinmobiliario.com/'},
-                            cb_kwargs=dict(regimen=regimen, modalidad=modalidad, tipo=tipo, region=region),
+                            cb_kwargs=dict(regimen=regimen, modalidad=modalidad, region=region),
                         )
 
-    def parseListing(self, response, regimen, modalidad, tipo, region):
+    def parseHome(self, response):
+        pass
+
+    def parseListing(self, response, regimen, modalidad, region):
         for item in response.xpath('//section[@id="results-section"]/ol/li'):
             adLink = item.css('a.item__info-link::attr(href)').get()
             adType = item.css('.item__info-title::text').get().strip()
             yield scrapy.Request(
                 url=adLink, 
                 callback=self.parseAd, 
-                cb_kwargs=dict(adType=adType, regimen=regimen, modalidad=modalidad, tipo=tipo, region=region)
+                cb_kwargs=dict(adType=adType, regimen=regimen, modalidad=modalidad, region=region)
             )
         
         next_page = response.css('li.andes-pagination__button--next a::attr(href)').get()
         if next_page is not None:
             next_page = response.urljoin(next_page)
-            yield scrapy.Request(next_page, callback=self.parse)
+            yield scrapy.Request(
+                url=next_page, 
+                callback=self.parseListing,
+                cb_kwargs=dict(regimen=regimen, modalidad=modalidad, region=region),
+            )
         
-    def parseAd(self, response, adType, regimen, modalidad, tipo, region):
+    def parseAd(self, response, adType, regimen, modalidad, region):
 
         yield {
             'regimen': regimen,
             'modalidad': modalidad,
-            'tipo': tipo,
             'region': region,
             'type': adType,
             'title': self.parseAttr(response.xpath('//header[@class="item-title"]/h1/text()')),
@@ -88,4 +95,4 @@ class PISpider(scrapy.Spider):
         if isinstance(attr, str):
             attr = attr.strip()
         
-        yield attr
+        return attr
