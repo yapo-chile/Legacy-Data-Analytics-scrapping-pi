@@ -1,64 +1,42 @@
 import scrapy
+import logging
 
 class PISpider(scrapy.Spider):
     name = "pi"
     url_base = 'https://www.portalinmobiliario.com'
-    regimenes = [
+    retry_xpath = '//head/meta[@name="application-name"]'
+    operaciones = [
         'venta',
         # 'arriendo',
     ]
-    regiones = [
-        'arica-y-parinacota',
-        'tarapaca',
-        'antofagasta',
-        'atacama',
-        'coquimbo',
-        'valparaiso',
-        'bernardo-ohiggins',
-        'maule',
-        'nuble',
-        'biobio',
-        'la-araucania',
-        'de-los-rios',
-        'los-lagos',
-        'aysen',
-        'magallanes-y-antartica-chilena',
-        'metropolitana',
-    ]
-    tipos = [
-        'casa',
-        'departamento',
-    ]
-    modalidades = [
-        'proyectos',
-        'propiedades-usadas',
-    ]
 
     def start_requests(self):
-        # yield scrapy.Request('https://www.portalinmobiliario.com', self.parseHome)
-        for regimen in self.regimenes:
-            for modalidad in self.modalidades:
-                    for region in self.regiones:
-                        yield scrapy.Request(
-                            url=self.url_base + '/' + regimen + '/' + modalidad + '/' + region, 
-                            callback=self.parseListing, 
-                            cookies={'pin_exp':'new'},
-                            headers={'Referer':'https://www.portalinmobiliario.com/'},
-                            cb_kwargs=dict(regimen=regimen, modalidad=modalidad, region=region),
-                        )
+        for operacion in self.operaciones:
+            yield scrapy.Request(
+                url=self.url_base + '/' + operacion, 
+                callback=self.parseListing, 
+                headers={'Referer':'https://www.portalinmobiliario.com/'},
+            )
 
-    def parseHome(self, response):
+    def parseListing(self, response):
+        quantity_results = int(response.css('.quantity-results::text').get().strip().split()[0].replace('.',''))
+        if quantity_results > 2000:
+            logging.debug("Quantity Results:" + str(quantity_results))
+            self.navigateListing(response)
+        else:
+            self.parseInnerListing(response)
+
+    def navigateListing(self, response):
         pass
 
-    def parseListing(self, response, regimen, modalidad, region):
+    def parseInnerListing(self, response):
         for item in response.xpath('//section[@id="results-section"]/ol/li'):
             adLink = item.css('a.item__info-link::attr(href)').get()
             adType = item.css('.item__info-title::text').get().strip()
-            yield scrapy.Request(
-                url=adLink, 
-                callback=self.parseAd, 
-                cb_kwargs=dict(adType=adType, regimen=regimen, modalidad=modalidad, region=region)
-            )
+            # yield scrapy.Request(
+            #     url=adLink, 
+            #     callback=self.parseAd,
+            # )
         
         next_page = response.css('li.andes-pagination__button--next a::attr(href)').get()
         if next_page is not None:
@@ -66,16 +44,11 @@ class PISpider(scrapy.Spider):
             yield scrapy.Request(
                 url=next_page, 
                 callback=self.parseListing,
-                cb_kwargs=dict(regimen=regimen, modalidad=modalidad, region=region),
             )
         
-    def parseAd(self, response, adType, regimen, modalidad, region):
-
+    def parseAd(self, response):
         yield {
-            'regimen': regimen,
-            'modalidad': modalidad,
-            'region': region,
-            'type': adType,
+            # TODO: Add operacion, modalidad y region.
             'title': self.parseAttr(response.xpath('//header[@class="item-title"]/h1/text()')),
             'price-symbol': self.parseAttr(response.xpath('//span[@class="price-tag-symbol"]/text()')),
             'price-fraction': self.parseAttr(response.xpath('//span[@class="price-tag-fraction"]/text()')),
