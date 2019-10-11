@@ -26,64 +26,65 @@ class PISpider(scrapy.Spider):
             )
 
     def parseListing(self, response, depth):
-        if response.css('.quantity-results::text') is None:
-            yield response.follow(
-                url=response.request.url,
-                callback=self.parseListing, 
-                headers={'X-Crawlera-Cookies':'disable'},
-                cb_kwargs=dict(depth=0),
-            )
-            
-        quantity_results = int(response.css('.quantity-results::text').get().strip().split()[0].replace('.',''))
-        logging.debug("Visiting: " + response.url + " (" + str(quantity_results) + ")" + "(" + str(depth) + ")")
-        if quantity_results > 2000:
-            if depth == 0:  # Navigate by inmueble
-                logging.debug("Going inmueble depth...")
-                if response.xpath('//*[@id="id_9991459-AMLC_1459_1"]//label[contains(@class,"see-more-filter")]') is None:
-                    for url in response.xpath('//*[@id="id_9991459-AMLC_1459_1"]//h3/a/@href'):
-                        yield response.follow(
-                            url=url.get(),
-                            callback=self.parseListing, 
-                            headers={'X-Crawlera-Cookies':'disable'},
-                            cb_kwargs=dict(depth=1),
-                        )
-                else:
-                    for url in response.xpath('//*[@id="id_9991459-AMLC_1459_1"]//*[contains(@class,"modal-content")]//h3/a/@href'):
+        if response.css('.quantity-results::text').get() is None:
+            yield response.request.replace(dont_filter=True)
+        else:    
+            quantity_results = int(response.css('.quantity-results::text').get().strip().split()[0].replace('.',''))
+            logging.debug("Visiting: " + response.url + " (" + str(quantity_results) + ")" + "(" + str(depth) + ")")
+            if quantity_results > 2000:
+                if depth == 0:  # Navigate by inmueble
+                    logging.debug("Going inmueble depth...")
+                    if response.xpath('//*[@id="id_9991459-AMLC_1459_1"]//label[contains(@class,"see-more-filter")]') is None:
+                        urls = response.xpath('//*[@id="id_9991459-AMLC_1459_1"]//h3/a/@href')
+                    else:
+                        urls = response.xpath('//*[@id="id_9991459-AMLC_1459_1"]//*[contains(@class,"modal-content")]//h3/a/@href')
+
+                    for url in urls:
                         yield scrapy.Request(
                             url=url.get(),
                             callback=self.parseListing,
                             headers={'X-Crawlera-Cookies':'disable'},
                             cb_kwargs=dict(depth=1),
                         )
-            if depth == 1: # Navigate by modalidad
-                logging.debug("Going modalidad depth...")
-                for url in response.xpath('//*[@id="id_9991459-AMLC_1459_3"]//h3/a/@href'):
-                    yield scrapy.Request(
-                        url=url.get(),
-                        callback=self.parseListing,
-                        headers={'X-Crawlera-Cookies':'disable'}, 
-                        cb_kwargs=dict(depth=2),
-                    )
-            if depth == 2: # Navigate by 
-                logging.debug("Going region depth...")
-                if response.xpath('//*[@id="id_state"]//label[contains(@class,"see-more-filter")]') is None:
-                    for url in response.xpath('//*[@id="id_state"]//h3/a/@href'):
+                if depth == 1: # Navigate by modalidad
+                    logging.debug("Going modalidad depth...")
+                    for url in response.xpath('//*[@id="id_9991459-AMLC_1459_3"]//h3/a/@href'):
+                        yield scrapy.Request(
+                            url=url.get(),
+                            callback=self.parseListing,
+                            headers={'X-Crawlera-Cookies':'disable'}, 
+                            cb_kwargs=dict(depth=2),
+                        )
+                if depth == 2: # Navigate by region
+                    logging.debug("Going region depth...")
+                    if response.xpath('//*[@id="id_state"]//label[contains(@class,"see-more-filter")]') is None:
+                        urls = response.xpath('//*[@id="id_state"]//h3/a/@href')
+                    else:
+                        urls = response.xpath('//*[@id="id_state"]//*[contains(@class,"modal-content")]//dd/a/@href')
+
+                    for url in urls:
                         yield scrapy.Request(
                             url=url.get(),
                             callback=self.parseListing, 
                             headers={'X-Crawlera-Cookies':'disable'},
                             cb_kwargs=dict(depth=3),
                         )
-                else:
-                    for url in response.xpath('//*[@id="id_state"]//*[contains(@class,"modal-content")]//dd/a/@href'):
+                if depth == 3: # Navigate by city
+                    logging.debug("Going city depth...")
+                    if response.xpath('//*[@id="id_city"]//label[contains(@class,"see-more-filter")]') is None:
+                        urls = response.xpath('//*[@id="id_city"]//h3/a/@href')
+                    else:
+                        urls = response.xpath('//*[@id="id_city"]//*[contains(@class,"modal-content")]//div/a/@href')
+
+                    for url in urls:
                         yield scrapy.Request(
                             url=url.get(),
                             callback=self.parseListing, 
                             headers={'X-Crawlera-Cookies':'disable'},
-                            cb_kwargs=dict(depth=3),
+                            cb_kwargs=dict(depth=4),
                         )
-        else:
-            self.parseInnerListing(response)
+            else:
+                self.parseInnerListing(response)
 
     def parseInnerListing(self, response):
         for item in response.xpath('//section[@id="results-section"]/ol/li'):
