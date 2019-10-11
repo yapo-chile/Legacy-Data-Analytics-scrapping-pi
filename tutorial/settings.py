@@ -55,8 +55,8 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
-    'tutorial.middlewares.CustomRetryMiddleware': 550,
+    #'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+    #'tutorial.middlewares.CustomRetryMiddleware': 550,
     'scrapy_crawlera.CrawleraMiddleware': 610,
 }
 
@@ -94,5 +94,5 @@ HTTPCACHE_IGNORE_HTTP_CODES = []
 HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 # Crawlera settings
-CRAWLERA_ENABLED = False
+CRAWLERA_ENABLED = True
 CRAWLERA_APIKEY = '090def29344441b1b309c48d8a90bedf'
