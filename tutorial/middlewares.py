@@ -101,24 +101,3 @@ class TutorialDownloaderMiddleware(object):
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
-
-
-from scrapy.downloadermiddlewares.retry import RetryMiddleware
-from scrapy.utils.response import response_status_message
-
-class CustomRetryMiddleware(RetryMiddleware):
-
-    # Portal inmobiliario old web page xpath
-    retry_xpath = '//head/meta[@name="application-name"]'
-
-    def process_response(self, request, response, spider):
-        if request.meta.get('dont_retry', False):
-            return response
-        if response.status in self.retry_http_codes:
-            reason = response_status_message(response.status)
-            return self._retry(request, reason, spider) or response
-
-        # this is your check
-        if response.status == 200 and response.xpath(self.retry_xpath):
-            return self._retry(request, 'response got xpath "{}"'.format(self.retry_xpath), spider) or response
-        return response

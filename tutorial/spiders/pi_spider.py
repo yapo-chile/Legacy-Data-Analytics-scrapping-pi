@@ -19,7 +19,8 @@ class PISpider(scrapy.Spider):
     def startProcessing(self, response):
         for operacion in self.operaciones:
             yield response.follow(
-                url='/' + operacion, 
+                #url='/' + operacion, 
+                url = '/venta/casa/propiedades-usadas/las-vizcachas-puente-alto-cordillera-metropolitana', #TEST
                 callback=self.parseListing, 
                 headers={'X-Crawlera-Cookies':'disable'},
                 cb_kwargs=dict(depth=0),
@@ -106,10 +107,10 @@ class PISpider(scrapy.Spider):
                 for item in response.xpath('//section[@id="results-section"]/ol/li'):
                     adLink = item.css('a.item__info-link::attr(href)').get()
                     adType = item.css('.item__info-title::text').get().strip()
-                    # yield scrapy.Request(
-                    #     url=adLink, 
-                    #     callback=self.parseAd,
-                    # )
+                    yield scrapy.Request(
+                        url=adLink, 
+                        callback=self.parseAd,
+                    )
                 
                 next_page = response.css('li.andes-pagination__button--next a::attr(href)').get()
                 if next_page is not None:
@@ -137,20 +138,32 @@ class PISpider(scrapy.Spider):
             )
         
     def parseAd(self, response):
-        yield {
-            # TODO: Add operacion, modalidad y region.
-            'title': self.parseAttr(response.xpath('//header[@class="item-title"]/h1/text()')),
-            'price-symbol': self.parseAttr(response.xpath('//span[@class="price-tag-symbol"]/text()')),
-            'price-fraction': self.parseAttr(response.xpath('//span[@class="price-tag-fraction"]/text()')),
-            'real-estate-agency': self.parseAttr(response.xpath('//p[@id="real_estate_agency"]/text()')),
-            'phones': response.xpath('//span[@class="profile-info-phone-value"]/text()').getall(),
-            'project-constructs': self.parseAttr(response.css('div.info-project-constructs p.info::text')),
-            'property-code': self.parseAttr(response.css('div.info-property-code p.info::text')),
-            'property-date' : self.parseAttr(response.css('div.info-property-date p.info::text')),
-            'address': self.parseAttr(response.css('div.seller-location .map-address::text')),
-            'location': self.parseAttr(response.css('div.seller-location .map-location::text')),
-            'url': response.url,
-        }
+        if response.xpath('//header[@class="item-title"]/h1/text()').get() is None:
+                    yield response.request.replace(dont_filter=True) # Retry
+        else:
+            categories = response.xpath('//*[contains(@class,"vip-navigation-breadcrumb-list")]//a[not(span)]/text()')
+            locations = response.xpath('//*[contains(@class,"vip-navigation-breadcrumb-list")]//a/span/text()')
+
+            yield {
+                'cat_1': self.parseAttr(categories[0]) if len(categories) > 0 else '',
+                'cat_2': self.parseAttr(categories[1]) if len(categories) > 1 else '',
+                'cat_3': self.parseAttr(categories[2]) if len(categories) > 2 else '',
+                'region': self.parseAttr(locations[0]) if len(locations) > 0 else '',
+                'ciudad': self.parseAttr(locations[1]) if len(locations) > 1 else '',
+                'barrio': self.parseAttr(locations[2]) if len(locations) > 2 else '',
+                'title': self.parseAttr(response.xpath('//header[@class="item-title"]/h1/text()')),
+                'price-symbol': self.parseAttr(response.xpath('//span[@class="price-tag-symbol"]/text()')),
+                'price-fraction': self.parseAttr(response.xpath('//span[@class="price-tag-fraction"]/text()')),
+                'real-estate-agency': self.parseAttr(response.xpath('//p[@id="real_estate_agency"]/text()')),
+                'phones': response.xpath('//span[@class="profile-info-phone-value"]/text()').getall(),
+                'project-constructs': self.parseAttr(response.css('div.info-project-constructs p.info::text')),
+                'property-code': self.parseAttr(response.css('div.info-property-code p.info::text')),
+                'property-date' : self.parseAttr(response.css('div.info-property-date p.info::text')),
+                'address': self.parseAttr(response.css('div.seller-location .map-address::text')),
+                'location': self.parseAttr(response.css('div.seller-location .map-location::text')),
+                'id': self.parseAttr(response.css('.item-info__id-number::text')),
+                'url': response.url,
+            }
     
     @staticmethod
     def parseAttr(node):
