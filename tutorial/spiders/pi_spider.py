@@ -27,13 +27,13 @@ class PISpider(scrapy.Spider):
 
     def parseListing(self, response, depth):
         if response.css('.quantity-results::text').get() is None:
-            yield response.request.replace(dont_filter=True)
+            yield response.request.replace(dont_filter=True) # Retry
         else:    
             quantity_results = int(response.css('.quantity-results::text').get().strip().split()[0].replace('.',''))
             logging.debug("Visiting: " + response.url + " (" + str(quantity_results) + ")" + "(" + str(depth) + ")")
+
             if quantity_results > 2000:
                 if depth == 0:  # Navigate by inmueble
-                    logging.debug("Going inmueble depth...")
                     if response.xpath('//*[@id="id_9991459-AMLC_1459_1"]//label[contains(@class,"see-more-filter")]') is None:
                         urls = response.xpath('//*[@id="id_9991459-AMLC_1459_1"]//h3/a/@href')
                     else:
@@ -46,8 +46,7 @@ class PISpider(scrapy.Spider):
                             headers={'X-Crawlera-Cookies':'disable'},
                             cb_kwargs=dict(depth=1),
                         )
-                if depth == 1: # Navigate by modalidad
-                    logging.debug("Going modalidad depth...")
+                elif depth == 1: # Navigate by modalidad
                     for url in response.xpath('//*[@id="id_9991459-AMLC_1459_3"]//h3/a/@href'):
                         yield scrapy.Request(
                             url=url.get(),
@@ -55,8 +54,7 @@ class PISpider(scrapy.Spider):
                             headers={'X-Crawlera-Cookies':'disable'}, 
                             cb_kwargs=dict(depth=2),
                         )
-                if depth == 2: # Navigate by region
-                    logging.debug("Going region depth...")
+                elif depth == 2: # Navigate by region
                     if response.xpath('//*[@id="id_state"]//label[contains(@class,"see-more-filter")]') is None:
                         urls = response.xpath('//*[@id="id_state"]//h3/a/@href')
                     else:
@@ -69,8 +67,7 @@ class PISpider(scrapy.Spider):
                             headers={'X-Crawlera-Cookies':'disable'},
                             cb_kwargs=dict(depth=3),
                         )
-                if depth == 3: # Navigate by city
-                    logging.debug("Going city depth...")
+                elif depth == 3: # Navigate by city
                     if response.xpath('//*[@id="id_city"]//label[contains(@class,"see-more-filter")]') is None:
                         urls = response.xpath('//*[@id="id_city"]//h3/a/@href')
                     else:
@@ -83,8 +80,44 @@ class PISpider(scrapy.Spider):
                             headers={'X-Crawlera-Cookies':'disable'},
                             cb_kwargs=dict(depth=4),
                         )
+                elif depth == 4: # Navigate by price
+                    urls = response.xpath('//*[@id="id_price"]//dd/a/@href')
+
+                    for url in urls:
+                        yield scrapy.Request(
+                            url=url.get(),
+                            callback=self.parseListing, 
+                            headers={'X-Crawlera-Cookies':'disable'},
+                            cb_kwargs=dict(depth=5),
+                        )
+                elif depth == 5: # Navigate by sub-price
+                    urls = response.xpath('//*[@id="id_price"]//dd/a/@href')
+
+                    for url in urls:
+                        yield scrapy.Request(
+                            url=url.get(),
+                            callback=self.parseListing, 
+                            headers={'X-Crawlera-Cookies':'disable'},
+                            cb_kwargs=dict(depth=6),
+                        )
+                else:
+                    logging.warn("Still too big: " + response.url + " (" + str(quantity_results) + ")" + "(" + str(depth) + ")")
             else:
-                self.parseInnerListing(response)
+                for item in response.xpath('//section[@id="results-section"]/ol/li'):
+                    adLink = item.css('a.item__info-link::attr(href)').get()
+                    adType = item.css('.item__info-title::text').get().strip()
+                    # yield scrapy.Request(
+                    #     url=adLink, 
+                    #     callback=self.parseAd,
+                    # )
+                
+                next_page = response.css('li.andes-pagination__button--next a::attr(href)').get()
+                if next_page is not None:
+                    yield response.follow(
+                        url=next_page, 
+                        callback=self.parseInnerListing,
+                        headers={'X-Crawlera-Cookies':'disable'},
+                    )
 
     def parseInnerListing(self, response):
         for item in response.xpath('//section[@id="results-section"]/ol/li'):
@@ -99,7 +132,7 @@ class PISpider(scrapy.Spider):
         if next_page is not None:
             yield response.follow(
                 url=next_page, 
-                callback=self.parseListing,
+                callback=self.parseInnerListing,
                 headers={'X-Crawlera-Cookies':'disable'},
             )
         
