@@ -19,8 +19,8 @@ class PISpider(scrapy.Spider):
     def startProcessing(self, response):
         for operacion in self.operaciones:
             yield response.follow(
-                #url='/' + operacion, 
-                url = '/venta/casa/propiedades-usadas/las-vizcachas-puente-alto-cordillera-metropolitana', #TEST
+                url='/' + operacion, 
+                #url = '/venta/casa/propiedades-usadas/las-vizcachas-puente-alto-cordillera-metropolitana', #TEST
                 callback=self.parseListing, 
                 headers={'X-Crawlera-Cookies':'disable'},
                 cb_kwargs=dict(depth=0),
@@ -28,6 +28,7 @@ class PISpider(scrapy.Spider):
 
     def parseListing(self, response, depth):
         if response.css('.quantity-results::text').get() is None:
+            logging.warning("Retrying listing: " + response.url)
             yield response.request.replace(dont_filter=True) # Retry
         else:    
             quantity_results = int(response.css('.quantity-results::text').get().strip().split()[0].replace('.',''))
@@ -102,14 +103,14 @@ class PISpider(scrapy.Spider):
                             cb_kwargs=dict(depth=6),
                         )
                 else:
-                    logging.warn("Still too big: " + response.url + " (" + str(quantity_results) + ")" + "(" + str(depth) + ")")
+                    logging.warning("Still too big: " + response.url + " (" + str(quantity_results) + ")" + "(" + str(depth) + ")")
             else:
                 for item in response.xpath('//section[@id="results-section"]/ol/li'):
                     adLink = item.css('a.item__info-link::attr(href)').get()
-                    adType = item.css('.item__info-title::text').get().strip()
                     yield scrapy.Request(
                         url=adLink, 
                         callback=self.parseAd,
+                        headers={'X-Crawlera-Cookies':'disable'},
                     )
                 
                 next_page = response.css('li.andes-pagination__button--next a::attr(href)').get()
@@ -123,11 +124,11 @@ class PISpider(scrapy.Spider):
     def parseInnerListing(self, response):
         for item in response.xpath('//section[@id="results-section"]/ol/li'):
             adLink = item.css('a.item__info-link::attr(href)').get()
-            adType = item.css('.item__info-title::text').get().strip()
-            # yield scrapy.Request(
-            #     url=adLink, 
-            #     callback=self.parseAd,
-            # )
+            yield scrapy.Request(
+                url=adLink, 
+                callback=self.parseAd,
+                headers={'X-Crawlera-Cookies':'disable'},
+            )
         
         next_page = response.css('li.andes-pagination__button--next a::attr(href)').get()
         if next_page is not None:
@@ -139,7 +140,8 @@ class PISpider(scrapy.Spider):
         
     def parseAd(self, response):
         if response.xpath('//header[@class="item-title"]/h1/text()').get() is None:
-                    yield response.request.replace(dont_filter=True) # Retry
+            logging.warning("Retrying ad: " + response.url)
+            yield response.request.replace(dont_filter=True) # Retry
         else:
             categories = response.xpath('//*[contains(@class,"vip-navigation-breadcrumb-list")]//a[not(span)]/text()')
             locations = response.xpath('//*[contains(@class,"vip-navigation-breadcrumb-list")]//a/span/text()')
