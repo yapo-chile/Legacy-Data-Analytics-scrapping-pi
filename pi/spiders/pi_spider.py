@@ -13,7 +13,6 @@ class PISpider(scrapy.Spider):
         yield scrapy.Request(
             url=self.url_base,
             callback=self.startProcessing,
-            headers={'X-Crawlera-Cookies':'disable'},
         )
 
     def startProcessing(self, response):
@@ -22,7 +21,6 @@ class PISpider(scrapy.Spider):
                 #url='/' + operacion, 
                 url = '/venta/casa/propiedades-usadas/las-vizcachas-puente-alto-cordillera-metropolitana', #TEST
                 callback=self.parseListing, 
-                headers={'X-Crawlera-Cookies':'disable'},
                 cb_kwargs=dict(depth=0),
             )
 
@@ -45,7 +43,6 @@ class PISpider(scrapy.Spider):
                         yield scrapy.Request(
                             url=url.get(),
                             callback=self.parseListing,
-                            headers={'X-Crawlera-Cookies':'disable'},
                             cb_kwargs=dict(depth=1),
                         )
                 elif depth == 1: # Navigate by modalidad
@@ -53,7 +50,6 @@ class PISpider(scrapy.Spider):
                         yield scrapy.Request(
                             url=url.get(),
                             callback=self.parseListing,
-                            headers={'X-Crawlera-Cookies':'disable'}, 
                             cb_kwargs=dict(depth=2),
                         )
                 elif depth == 2: # Navigate by region
@@ -66,7 +62,6 @@ class PISpider(scrapy.Spider):
                         yield scrapy.Request(
                             url=url.get(),
                             callback=self.parseListing, 
-                            headers={'X-Crawlera-Cookies':'disable'},
                             cb_kwargs=dict(depth=3),
                         )
                 elif depth == 3: # Navigate by city
@@ -79,7 +74,6 @@ class PISpider(scrapy.Spider):
                         yield scrapy.Request(
                             url=url.get(),
                             callback=self.parseListing, 
-                            headers={'X-Crawlera-Cookies':'disable'},
                             cb_kwargs=dict(depth=4),
                         )
                 elif depth == 4: # Navigate by price
@@ -89,7 +83,6 @@ class PISpider(scrapy.Spider):
                         yield scrapy.Request(
                             url=url.get(),
                             callback=self.parseListing, 
-                            headers={'X-Crawlera-Cookies':'disable'},
                             cb_kwargs=dict(depth=5),
                         )
                 elif depth == 5: # Navigate by sub-price
@@ -99,7 +92,6 @@ class PISpider(scrapy.Spider):
                         yield scrapy.Request(
                             url=url.get(),
                             callback=self.parseListing, 
-                            headers={'X-Crawlera-Cookies':'disable'},
                             cb_kwargs=dict(depth=6),
                         )
                 else:
@@ -110,7 +102,6 @@ class PISpider(scrapy.Spider):
                     yield scrapy.Request(
                         url=adLink, 
                         callback=self.parseAd,
-                        headers={'X-Crawlera-Cookies':'disable'},
                     )
                 
                 next_page = response.css('li.andes-pagination__button--next a::attr(href)').get()
@@ -118,7 +109,6 @@ class PISpider(scrapy.Spider):
                     yield response.follow(
                         url=next_page, 
                         callback=self.parseInnerListing,
-                        headers={'X-Crawlera-Cookies':'disable'},
                     )
 
     def parseInnerListing(self, response):
@@ -127,7 +117,6 @@ class PISpider(scrapy.Spider):
             yield scrapy.Request(
                 url=adLink, 
                 callback=self.parseAd,
-                headers={'X-Crawlera-Cookies':'disable'},
             )
         
         next_page = response.css('li.andes-pagination__button--next a::attr(href)').get()
@@ -135,7 +124,6 @@ class PISpider(scrapy.Spider):
             yield response.follow(
                 url=next_page, 
                 callback=self.parseInnerListing,
-                headers={'X-Crawlera-Cookies':'disable'},
             )
         
     def parseAd(self, response):
