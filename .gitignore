@@ -6,4 +6,4 @@ _pycache__/**
 *.py[cod]
 *$py.class
 
-.env
+.virtualenv

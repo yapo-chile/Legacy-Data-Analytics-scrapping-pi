@@ -19,8 +19,8 @@ class PISpider(scrapy.Spider):
     def startProcessing(self, response):
         for operacion in self.operaciones:
             yield response.follow(
-                url='/' + operacion, 
-                #url = '/venta/casa/propiedades-usadas/las-vizcachas-puente-alto-cordillera-metropolitana', #TEST
+                #url='/' + operacion, 
+                url = '/venta/casa/propiedades-usadas/las-vizcachas-puente-alto-cordillera-metropolitana', #TEST
                 callback=self.parseListing, 
                 headers={'X-Crawlera-Cookies':'disable'},
                 cb_kwargs=dict(depth=0),

@@ -9,10 +9,10 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = 'tutorial'
+BOT_NAME = 'pi'
 
-SPIDER_MODULES = ['tutorial.spiders']
-NEWSPIDER_MODULE = 'tutorial.spiders'
+SPIDER_MODULES = ['pi.spiders']
+NEWSPIDER_MODULE = 'pi.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -92,5 +92,5 @@ HTTPCACHE_IGNORE_HTTP_CODES = []
 HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 # Crawlera settings
-CRAWLERA_ENABLED = True
+CRAWLERA_ENABLED = False
 CRAWLERA_APIKEY = '090def29344441b1b309c48d8a90bedf'
