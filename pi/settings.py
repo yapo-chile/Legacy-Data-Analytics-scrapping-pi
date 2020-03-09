@@ -85,12 +85,11 @@ AUTOTHROTTLE_TARGET_CONCURRENCY = 10.0
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
-HTTPCACHE_ENABLED = False
-HTTPCACHE_EXPIRATION_SECS = 0
-HTTPCACHE_DIR = 'httpcache'
-HTTPCACHE_IGNORE_HTTP_CODES = []
-HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+# HTTPCACHE_ENABLED = False
+# HTTPCACHE_EXPIRATION_SECS = 0
+# HTTPCACHE_DIR = 'httpcache'
+# HTTPCACHE_IGNORE_HTTP_CODES = []
+# HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-METAREFRESH_IGNORE_TAGS = ['noscript']
-
-RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429, 400]
+# En ciertas ocaciones PI retorna un codigo 400 que debemos considerar para reintento.
+RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429, 400, 404]
