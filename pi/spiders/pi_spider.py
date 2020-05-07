@@ -18,7 +18,7 @@ class PISpider(scrapy.Spider):
     }
     operaciones = [
         'venta',
-        # 'arriendo',
+        'arriendo',
     ]
     no_scrap = False #No scrapping, only crawling
 
@@ -32,7 +32,7 @@ class PISpider(scrapy.Spider):
         for operacion in self.operaciones:
             yield response.follow(
                 url='/' + operacion, 
-                #url = '/venta/parcela', #TEST
+                #url = '/arriendo/oficina/propiedades-usadas/las-condes-metropolitana', #TEST
                 callback=self.parseListing, 
                 errback=self.errback,
                 cb_kwargs=dict(depth=0),
@@ -146,6 +146,19 @@ class PISpider(scrapy.Spider):
                         callback=self.parseListing, 
                         errback=self.errback,
                         cb_kwargs=dict(depth=6),
+                        dont_filter=True,
+                    )
+        elif depth == 6: # Navigate by baños
+            if response.xpath('//*[@id="id_FULL_BATHROOMS"]').get() is None: # Pasamos el siguiente nivel si el filtro no existe
+                depth += 1
+                yield from self.divideNConquer(response, depth, qty)
+            else:
+                for url in response.xpath('//*[@id="id_FULL_BATHROOMS"]//dd/a/@href'):
+                    yield scrapy.Request(
+                        url=url.get(),
+                        callback=self.parseListing, 
+                        errback=self.errback,
+                        cb_kwargs=dict(depth=7),
                         dont_filter=True,
                     )
         else:
