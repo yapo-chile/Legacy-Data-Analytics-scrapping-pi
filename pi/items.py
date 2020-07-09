@@ -1,6 +1,6 @@
 import scrapy
 from scrapy.loader.processors import Compose, MapCompose, Join, TakeFirst
-clean_text = Compose(MapCompose(lambda v: v.strip()), Join())
+clean_text = Compose(MapCompose(lambda v: v.strip().replace('\r\n', ' ')), Join())
 to_int = Compose(TakeFirst(), int)
 
 class Ad(scrapy.Item):

@@ -12,8 +12,8 @@ class PISpider(scrapy.Spider):
     allowed_domains = ['www.portalinmobiliario.com']
     url_base = 'https://www.portalinmobiliario.com'
     custom_settings = {
-        'FEED_EXPORT_FIELDS': ['codigo_propiedad','fecha_publicacion','cat_1','cat_2','cat_3','region','ciudad','barrio','titulo','precio_1_simbolo','precio_1_valor','precio_2_simbolo','precio_2_valor','superficie_total','superficie_util','dormitorios',
-            'banos','agencia','telefonos','constructora','direccion','locacion','id','url'], # Orden de los campos en csv de salida
+        'FEED_EXPORT_FIELDS': ['id','codigo_propiedad','fecha_publicacion','cat_1','cat_2','cat_3','region','ciudad','barrio','titulo','precio_1_simbolo','precio_1_valor','precio_2_simbolo','precio_2_valor','superficie_total','superficie_util','dormitorios',
+            'banos','agencia','telefonos','constructora','direccion','locacion','url'], # Orden de los campos en csv de salida
         'METAREFRESH_IGNORE_TAGS': ['noscript'], # PI utiliza un tag de meta refresh dentro de un tag noscript para bloquear scrappers que debemos ignorar.
     }
     operaciones = [
@@ -167,7 +167,7 @@ class PISpider(scrapy.Spider):
     def parseInnerListing(self, response):
         if self.no_scrap == False:
             for item in response.xpath('//section[@id="results-section"]/ol/li'):
-                adLink = item.css('a.item__info-link::attr(href)').get()
+                adLink = item.css('a.item__info-link::attr(href)').re_first(r'^([^#]+)')
                 yield scrapy.Request(
                     url=adLink, 
                     callback=self.parseAd,
