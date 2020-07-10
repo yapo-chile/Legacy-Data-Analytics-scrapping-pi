@@ -92,4 +92,4 @@ AUTOTHROTTLE_TARGET_CONCURRENCY = 5.0
 # HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 # En ciertas ocaciones PI retorna un codigo 400 que debemos considerar para reintento.
-RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429]
+RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429, 404]

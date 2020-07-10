@@ -185,8 +185,7 @@ class PISpider(scrapy.Spider):
         
     def parseAd(self, response):
         if response.xpath('//header[@class="item-title"]/h1/text()').get() is None:
-            logging.warning("Retrying ad: " + response.url)
-            yield response.request.replace(dont_filter=True) # Retry
+            logging.warning("Failed to get ad: " + response.request.url + " (" + response.url + ")")
         else:
             categories = response.xpath('//*[contains(@class,"vip-navigation-breadcrumb-list")]//a[not(span)]/text()').getall()
             locations = response.xpath('//*[contains(@class,"vip-navigation-breadcrumb-list")]//a/span/text()').getall()
